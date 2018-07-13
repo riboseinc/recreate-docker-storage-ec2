@@ -7,8 +7,8 @@
 # negative effects.
 #
 # You need to run all this ephemeral setup stuff on every boot, not only on first
-# boot of an ECS instance. User-data provided scripts are only executes on the
-# first boot, install this script as a service which starts before Docker.
+# boot of an ECS instance. User-data provided scripts are only executed on the
+# first boot, so install this script as a service which starts before Docker.
 #
 # The flow of this script is as follows:
 #
