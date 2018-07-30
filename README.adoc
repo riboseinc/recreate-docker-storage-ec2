@@ -3,10 +3,11 @@
 
 == Description
 
-This script is meant for AWS EC2 instances (RHEL7 and CentOS7) to wipe out any
-existing Docker storage and recreate the necessary PVs, VG, and LV through
-devicemapper to use ephemeral and EBS storage. It then formats the resulting LV
-for ext4, and makes Docker use the LV. It can be run any number of times without
+The recreate-docker-storage-ec2.sh script is meant for AWS EC2 instances
+(RHEL7 and CentOS7) to wipe out any existing Docker storage and recreate the
+necessary PVs, VG, and LV through devicemapper to use ephemeral and EBS storage.
+It then formats the resulting LV for ext4, and makes Docker use the LV. It can
+be run any number of times without
 negative effects.
 
 You need to run all this ephemeral setup stuff on every boot, not only on first
@@ -25,6 +26,15 @@ The flow of this script is as follows:
 
 There are several sleeps during each step because sometimes on slower EC2
 instances it takes a couple of seconds for changes to become active and visible.
+
+Included is `mount-docker.sh` which mounts the Docker disk.
+
+
+== Installation to /usr/local/bin
+
+```sh
+sudo ./install.sh
+```
 
 
 == Usage

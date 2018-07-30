@@ -2,7 +2,7 @@
 #
 # This script is meant for AWS EC2 instances (RHEL7 and CentOS7) to wipe out any
 # existing Docker storage and recreate the necessary PVs, VG, and LV through
-# devicemapper to use ephemeral and EBS storage. It then formats the resulting LV
+# devicemapper to use ephemeral and/or EBS storage. It then formats the resulting LV
 # for ext4, and makes Docker use the LV. It can be run any number of times without
 # negative effects.
 #
@@ -33,6 +33,7 @@
 readonly docker_mount="/var/lib/docker"
 readonly fstab="/etc/fstab"
 export mountyesno=0
+export mountdocker="/usr/local/bin/mount-docker.sh"
 
 sleep5() {
   echo -n "$0: sleeping for 5 seconds: "
@@ -44,12 +45,12 @@ sleep5() {
 }
 
 unmount_ephs() {
-  echo "$0 ${FUNCNAME[0]}(): removing mounts for ephemeral storage in '${fstab}':" >&2
-  grep -v "/media/ephemeral" "${fstab}" > /etc/fstab2
-  mv /etc/fstab2 "${fstab}"
+  local ephemeral="/media/ephemeral"
+  echo "$0 ${FUNCNAME[0]}(): removing mounts for ephemeral storage '${ephemeral}' in '${fstab}':" >&2
+  sed -i -e "\@${ephemeral}@d" "${fstab}"
 
   echo "$0 ${FUNCNAME[0]}(): trying to unmount ephemeral mounts. Some may fail to unmount, please ignore this..." >&2
-  EPHEMERAL_MOUNTS=$(mount | grep /media/ephemeral | awk '{ print $3 }')
+  EPHEMERAL_MOUNTS=$(mount | grep ${ephemeral} | awk '{ print $3 }')
   for i in ${EPHEMERAL_MOUNTS}; do
     mount | grep -qw "${i}" || \
       continue
@@ -103,8 +104,7 @@ sanitise_blockdevices() {
       fi
     fi
 
-    grep -vw "${device}" "${fstab}" > /etc/fstab2
-    mv /etc/fstab2 "${fstab}"
+    sed -i -e "\@${device}@d" "${fstab}"
   done
 
   sleep5
@@ -288,8 +288,7 @@ prepare_docker() {
   dev="/dev/${pool}/${name}"
 
   echo "$0 ${FUNCNAME[0]}(): removing '${docker_mount}' from '${fstab}'"
-  grep -vw "${docker_mount}" "${fstab}" > /etc/fstab2
-  mv /etc/fstab2 "${fstab}"
+  sed -i -e "\@${docker_mount}@d" "${fstab}"
 
   echo "$0 ${FUNCNAME[0]}(): vgcreate '${pool}' '$@'"
   yes | vgcreate ${pool} $@
@@ -320,9 +319,9 @@ prepare_docker() {
 
   if [ "${mountyesno}" -eq 1 ]; then
     echo "$0 ${FUNCNAME[0]}(): mount '${dev}' '${docker_mount}'"
-    mount $(awk '/docker/ { print $1, $2 }' /etc/fstab)
+    "${mountdocker}"
     if [ $? -ne 0 ]; then
-      echo "$0 ${FUNCNAME[0]}(): mount '${dev}' '${docker_mount}' failed"
+      echo "$0 ${FUNCNAME[0]}(): '${mountdocker}' failed"
       exit 1
     fi
   fi
@@ -337,6 +336,11 @@ main() {
   if [ -z "$1" ]; then
     echo "$0 ${FUNCNAME[0]}(): will mount after setup"
     mountyesno=1
+  fi
+
+  if [ ! -x "${mountdocker}" ]; then
+	echo "$0 ${FUNCNAME[0]}(): cannot find '${mountdocker}' (hint: run 'install.sh')"
+	exit 1
   fi
 
   rpm -qi lvm2 >/dev/null
