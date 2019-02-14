@@ -58,7 +58,6 @@ unmount_ephs() {
     umount -f "${i}"
     if [ $? -ne 0 ]; then
       echo "$0 ${FUNCNAME[0]}(): cannot umount '${i}'"
-      exit 1
     fi
   done
 }
@@ -100,7 +99,6 @@ sanitise_blockdevices() {
       umount -f "${device}"
       if [ $? -ne 0 ]; then
         echo "$0 ${FUNCNAME[0]}(): cannot umount '${device}'"
-        exit 1
       fi
     fi
 
@@ -119,7 +117,6 @@ remove_docker_and_wipe_devices() {
     umount -f "${docker_mount}" || \
     if [ $? -ne 0 ]; then
       echo "$0 ${FUNCNAME[0]}(): cannot umount '${docker_mount}'"
-      exit 1
     fi
   fi
 
@@ -142,7 +139,6 @@ remove_docker_and_wipe_devices() {
     umount -f /dev/docker/docker
     if [ $? -ne 0 ]; then
       echo "$0 ${FUNCNAME[0]}(): cannot umount '/dev/docker/docker'"
-      exit 1
     fi
   fi
 
@@ -207,7 +203,6 @@ remove_docker_and_wipe_devices() {
       umount -f "${device}"
       if [ $? -ne 0 ]; then
         echo "$0 ${FUNCNAME[0]}(): cannot umount '${device}'"
-        exit 1
       fi
     fi
 
@@ -372,7 +367,6 @@ main() {
     umount -f "${docker_mount}"
     if [ $? -ne 0 ]; then
       echo "$0 ${FUNCNAME[0]}(): cannot umount '${docker_mount}'"
-      exit 1
     fi
   fi
 
